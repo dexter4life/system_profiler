@@ -19,22 +19,31 @@ const toast = require("powertoast");
 const monitor = require("../lib/monitorevent.node");
 const TextSmart = require("textsmart");
 const tsjs = new TextSmart.Classifier();
+const fs = require("fs");
+const path = require("path");
+const csv = require("csvtojson");
 
-tsjs.train("silly", "insult");
-tsjs.train("well done", "greeting");
-tsjs.train("stupid", "insult");
-tsjs.train("you're crazy", "insult");
+ // listen for the "keypress" event
+let training_path = path.join(__dirname, "/", "train.csv");
+
+csv()
+.fromFile(training_path)
+.then((jsonObj) => {
+  jsonObj.forEach(entry => {
+    tsjs.train(String(entry.comment), String(entry.type));
+  });
+});
 
 async function createWindow() {
+    
   monitor.MonitorClick(function(data) {
     const response = tsjs.predict(data);
-
-    console.log(response, " ", data);
+    console.log(data);
     response.forEach((d) => {
-      if (d.output === "insult") {
+      if (d.output !== 'none') {
         toast({
           title: "System Profiler",
-          message: "Detected an insult",
+          message: "Detected an " + d.output,
           icon: "",
         }).catch((err) => {
           console.error(err);

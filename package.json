@@ -2,6 +2,9 @@
   "name": "profiler",
   "version": "0.1.0",
   "private": true,
+  "description": "Profiler for windows",
+  "author": "",
+  "license": "ISC",
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
@@ -21,6 +24,7 @@
     "convert": "^1.6.2",
     "convnetjs": "^0.3.0",
     "core-js": "^3.6.5",
+    "csvtojson": "^2.0.10",
     "decimal.js": "^10.2.1",
     "echarts": "^5.0.2",
     "electron": "11.0.0",
@@ -28,7 +32,10 @@
     "file-loader": "^6.2.0",
     "fusioncharts": "^3.16.0",
     "hound": "^1.0.5",
+    "iohook": "^0.7.2",
+    "keypress": "^0.2.1",
     "moment": "^2.29.1",
+    "node-abi": "^2.19.3",
     "node-loader": "^1.0.2",
     "node-mind": "^1.0.1",
     "node-os-utils": "^1.3.2",
@@ -69,6 +76,18 @@
       "parser": "babel-eslint"
     },
     "rules": {}
+  },
+  "iohook": {
+    "targets": [
+      "node-88",
+      "electron-85"
+    ],
+    "platforms": [
+      "win32"
+    ],
+    "arches": [
+      "x64"
+    ]
   },
   "browserslist": [
     "> 1%",
