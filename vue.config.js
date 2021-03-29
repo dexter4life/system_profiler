@@ -6,6 +6,7 @@ module.exports = {
     plugins: [new webpack.IgnorePlugin(/osx-temperature-sensor/)],
     externals: {
       ffi: "require('ffi')",
+      vertx: "commonjs vertx",
     },
     // Webpack configuration applied to web builds and the electron renderer process
   },

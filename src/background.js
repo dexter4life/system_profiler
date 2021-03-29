@@ -22,33 +22,71 @@ const tsjs = new TextSmart.Classifier();
 const fs = require("fs");
 const path = require("path");
 const csv = require("csvtojson");
+const autobahn = require("autobahn");
 
- // listen for the "keypress" event
-let training_path = path.join(__dirname, "/", "train.csv");
+// listen for the "keypress" event
+let training_path = path.join(process.cwd(), "./", "train.csv");
 
-csv()
-.fromFile(training_path)
-.then((jsonObj) => {
-  jsonObj.forEach(entry => {
-    tsjs.train(String(entry.comment), String(entry.type));
-  });
+fs.stat(training_path, function(err, stats) {
+  if (err) {
+    monitor.ErrorMessage(err.message);
+    process.exit(1);
+    return;
+  }
+  csv()
+    .fromFile(training_path)
+    .then((jsonObj) => {
+      jsonObj.forEach((entry) => {
+        tsjs.train(entry.comment, entry.type);
+      });
+    });
+});
+
+function makeid(length) {
+  var result = "";
+  var characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  var charactersLength = characters.length;
+  for (var i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * charactersLength));
+  }
+  return result;
+}
+
+//  url: `ws://18.191.252.189:9090/`,
+var connection = new autobahn.Connection({
+  url: `ws://18.191.252.189:9090/`,
+  realm: "realm1",
 });
 
 async function createWindow() {
-    
+  var currentSession = null;
+
+  connection.onopen = function(session) {
+    currentSession = session;
+    session.publish("com.global.report", [{ active: true, id: makeid(10) }]);
+  };
+  connection.onclose = function() {
+    session.publish("com.global.report", [{ active: false, id: makeid(10) }]);
+  };
+
+  connection.open();
+
   monitor.MonitorClick(function(data) {
     const response = tsjs.predict(data);
-    console.log(data);
     response.forEach((d) => {
-      if (d.output !== 'none') {
-        toast({
-          title: "System Profiler",
-          message: "Detected an " + d.output,
-          icon: "",
-        }).catch((err) => {
-          console.error(err);
-        });
-      }
+      console.log(data);
+      toast({
+        title: "System Profiler",
+        message: "Detected an " + d.output,
+        icon: "",
+      }).catch((err) => {
+        console.error(err);
+      });
+
+      currentSession.publish("com.global.report", [
+        { type: d.output, sentence: data },
+      ]);
     });
   });
 
@@ -109,6 +147,7 @@ async function createWindow() {
 
 // Quit when all windows are closed.
 app.on("window-all-closed", () => {
+  connection.close();
   // On macOS it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
   if (process.platform !== "darwin") {
@@ -117,9 +156,11 @@ app.on("window-all-closed", () => {
 });
 
 app.on("activate", () => {
+  
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
+ 
 });
 
 // This method will be called when Electron has finished
