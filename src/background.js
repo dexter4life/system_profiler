@@ -53,7 +53,6 @@ function makeid(length) {
   return result;
 }
 
-//  url: `ws://18.191.252.189:9090/`,
 var connection = new autobahn.Connection({
   url: `ws://18.191.252.189:9090/`,
   realm: "realm1",
