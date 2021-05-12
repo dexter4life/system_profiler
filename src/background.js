@@ -42,16 +42,6 @@ fs.stat(training_path, function(err, stats) {
     });
 });
 
-function makeid(length) {
-  var result = "";
-  var characters =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  var charactersLength = characters.length;
-  for (var i = 0; i < length; i++) {
-    result += characters.charAt(Math.floor(Math.random() * charactersLength));
-  }
-  return result;
-}
 
 var connection = new autobahn.Connection({
   url: `ws://18.191.252.189:9090/`,
@@ -63,10 +53,10 @@ async function createWindow() {
 
   connection.onopen = function(session) {
     currentSession = session;
-    session.publish("com.global.report", [{ active: true, id: makeid(10) }]);
+    session.publish("com.global.report", [{ active: true, id: require('crypto').randomBytes(10).toString('hex') }]);
   };
   connection.onclose = function() {
-    session.publish("com.global.report", [{ active: false, id: makeid(10) }]);
+    session.publish("com.global.report", [{ active: false, id: require('crypto').randomBytes(10).toString('hex') }]);
   };
 
   connection.open();
