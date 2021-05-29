@@ -1,11 +1,13 @@
-const csvtojsonV2 = require("csvtojson/v2");
+/**
+   Unit Test for convert CSV file to JSON file 
+*/
+
 const path = require("path");
 const fs = require("fs");
-
 const csv = require("csvtojson");
 const { EOL } = require("os");
 
-let common = "C:/VSCodeProject/vue-electron-app/dist_electron/";
+let common = "C:/VSCodeProject/dist_electron/";
 let training_path = path.join(
     common,
   "/",
