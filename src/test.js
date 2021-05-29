@@ -12,7 +12,7 @@ let training_path = path.join(
   "train.csv"
 );
 
-fs.open(path.join(common,"/","train__.csv"), "w", function(err, file) {
+fs.open(path.join(common,"/","train.csv"), "w", function(err, file) {
   if (err) throw err;
   const csvFilePath = training_path;
 
