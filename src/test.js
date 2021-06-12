@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 // const csvtojsonV2 = require("csvtojson/v2");
 // const path = require("path");
 // const fs = require("fs");
@@ -27,6 +28,39 @@
 //         fs.appendFileSync(file, EOL);
 
 //       });
+=======
+/**
+   Unit Test for convert CSV file to JSON file 
+*/
+
+const path = require("path");
+const fs = require("fs");
+const csv = require("csvtojson");
+const { EOL } = require("os");
+
+let common = "C:/VSCodeProject/dist_electron/";
+let training_path = path.join(
+    common,
+  "/",
+  "train.csv"
+);
+
+fs.open(path.join(common,"/","train.csv"), "w", function(err, file) {
+  if (err) throw err;
+  const csvFilePath = training_path;
+
+  csv()
+    .fromFile(csvFilePath)
+    .then((jsonObj) => {
+      console.log(jsonObj);
+      jsonObj.forEach(entry => {
+        fs.appendFileSync(file, entry.insult === '1' ? "\"insult\"" : "\"none\"");
+        fs.appendFileSync(file, ',');  
+        fs.appendFileSync(file, `\"${String(entry.comment)}\"`);
+        fs.appendFileSync(file, EOL);
+
+      });
+>>>>>>> 6bfa17495812b0aafb331e93bab320970cae4e82
       
 //     });
 // });

@@ -10,37 +10,39 @@ protocol.registerSchemesAsPrivileged([
   { scheme: "app", privileges: { secure: true, standard: true } },
 ]);
 
-const os = require("os");
+// const os = require("os");
 const si = require("systeminformation");
-const { ipcMain } = require("electron");
+// const { ipcMain } = require("electron");
 var osu = require("node-os-utils");
 var cpu = osu.cpu;
 const toast = require("powertoast");
 const monitor = require("../lib/monitorevent.node");
-const TextSmart = require("textsmart");
-const tsjs = new TextSmart.Classifier();
-const fs = require("fs");
-const path = require("path");
-const csv = require("csvtojson");
 const autobahn = require("autobahn");
+const axios = require('axios').default;
 
-// listen for the "keypress" event
-let training_path = path.join(process.cwd(), "./", "train.csv");
+// const TextSmart = require("textsmart");
+// const tsjs = new TextSmart.Classifier();
+// const fs = require("fs");
+// const path = require("path");
+// const csv = require("csvtojson");
 
-fs.stat(training_path, function(err, stats) {
-  if (err) {
-    monitor.ErrorMessage(err.message);
-    process.exit(1);
-    return;
-  }
-  csv()
-    .fromFile(training_path)
-    .then((jsonObj) => {
-      jsonObj.forEach((entry) => {
-        tsjs.train(entry.comment, entry.type);
-      });
-    });
-});
+// // listen for the "keypress" event
+// let training_path = path.join(process.cwd(), "./", "train.csv");
+
+// fs.stat(training_path, function(err, stats) {
+//   if (err) {
+//     monitor.ErrorMessage(err.message);
+//     process.exit(1);
+//     return;
+//   }
+//   csv()
+//     .fromFile(training_path)
+//     .then((jsonObj) => {
+//       jsonObj.forEach((entry) => {
+//         tsjs.train(entry.comment, entry.type);
+//       });
+//     });
+// });
 
 
 var connection = new autobahn.Connection({
@@ -51,32 +53,37 @@ var connection = new autobahn.Connection({
 async function createWindow() {
   var currentSession = null;
 
-  connection.onopen = function(session) {
+  connection.onopen = function (session) {
     currentSession = session;
     session.publish("com.global.report", [{ active: true, id: require('crypto').randomBytes(10).toString('hex') }]);
   };
-  connection.onclose = function() {
-    session.publish("com.global.report", [{ active: false, id: require('crypto').randomBytes(10).toString('hex') }]);
+  connection.onclose = function () {
+    currentSession.publish("com.global.report", [{ active: false, id: require('crypto').randomBytes(10).toString('hex') }]);
   };
 
   connection.open();
 
-  monitor.MonitorClick(function(data) {
-    const response = tsjs.predict(data);
-    response.forEach((d) => {
-      console.log(data);
-      toast({
-        title: "System Profiler",
-        message: "Detected an " + d.output,
-        icon: "",
-      }).catch((err) => {
-        console.error(err);
+  monitor.MonitorClick(function (data) {
+    console.log(data);
+    axios.post('http://18.191.252.189:3000/classifier', { data: data })
+      .then(function (response) {
+        var data = response.data[0];
+        if (data != null && data != undefined) {
+          toast({
+            title: "System Profiler",
+            message: "Detected an " + data.output,
+            icon: "",
+          }).catch((err) => {
+            console.error(err);
+          });
+          currentSession.publish("com.global.report", [
+            { type: data.output, sentence: data },
+          ]);
+        }
+      })
+      .catch(function (error) {
+        console.log(error.data);
       });
-
-      currentSession.publish("com.global.report", [
-        { type: d.output, sentence: data },
-      ]);
-    });
   });
 
   // Create the browser window.
@@ -99,22 +106,22 @@ async function createWindow() {
       });
     });
 
-    si.processes(function(data) {
+    si.processes(function (data) {
       win.webContents.send("cpu-ex", {
         processCount: data.all,
         processData: data,
       });
     });
 
-    si.networkConnections(function(data) {
+    si.networkConnections(function (data) {
       win.webContents.send("network-ex", { connections: data.length });
     });
 
-    si.networkStats().then(function(data) {
+    si.networkStats().then(function (data) {
       win.webContents.send("network-ex", { networkStats: data });
     });
 
-    si.mem().then(function(data) {
+    si.mem().then(function (data) {
       win.webContents.send("memory", data);
     });
   }, 1000);
@@ -145,11 +152,11 @@ app.on("window-all-closed", () => {
 });
 
 app.on("activate", () => {
-  
+
   // On macOS it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
- 
+
 });
 
 // This method will be called when Electron has finished
