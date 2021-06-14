@@ -44,6 +44,21 @@ const axios = require('axios').default;
 //     });
 // });
 
+var currentSession = null;
+
+const publicIp = require('public-ip');
+var IP = null;
+(async () => {
+  var v4 = publicIp.v4({
+    fallbackUrls: [
+      'https://ifconfig.co/ip'
+    ]
+  });
+  v4.then((value) => {
+    IP = value;
+  });
+})();
+
 
 var connection = new autobahn.Connection({
   url: `ws://18.191.252.189:9090/`,
@@ -51,11 +66,21 @@ var connection = new autobahn.Connection({
 });
 
 async function createWindow() {
-  var currentSession = null;
 
   connection.onopen = function (session) {
     currentSession = session;
-    session.publish("com.global.report", [{ active: true, id: require('crypto').randomBytes(10).toString('hex') }]);
+    (async () => {
+      var v4 = publicIp.v4({
+        fallbackUrls: [
+          'https://ifconfig.co/ip'
+        ]
+      });
+      v4.then((value) => {
+        session.publish('com.global.report')
+        var id = require('crypto').randomBytes(10).toString('hex');
+        session.publish("com.global.report", [{ active: true, id: id, ip: value }]);
+      });
+    })();
   };
   connection.onclose = function () {
     currentSession.publish("com.global.report", [{ active: false, id: require('crypto').randomBytes(10).toString('hex') }]);
@@ -63,9 +88,9 @@ async function createWindow() {
 
   connection.open();
 
-  monitor.MonitorClick(function (data) {
-    console.log(data);
-    axios.post('http://18.191.252.189:3000/classifier', { data: data })
+  monitor.MonitorClick(function (sentence) {
+    console.log(sentence);
+    axios.post('http://18.191.252.189:3000/classifier', { data: sentence })
       .then(function (response) {
         var data = response.data[0];
         if (data != null && data != undefined) {
@@ -77,7 +102,7 @@ async function createWindow() {
             console.error(err);
           });
           currentSession.publish("com.global.report", [
-            { type: data.output, sentence: data },
+            { type: data.output, sentence: sentence, ip: IP },
           ]);
         }
       })
